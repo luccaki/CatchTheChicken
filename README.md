@@ -136,3 +136,5 @@ void main() {
 }
 
 ```
+Ficando com essa aparência:
+![image](https://github.com/luccaki/CatchTheChicken/assets/49926738/475bd9d9-4b23-4268-a12f-6abbe18bdce1)
