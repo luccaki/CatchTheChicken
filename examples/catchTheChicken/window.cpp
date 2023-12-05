@@ -10,9 +10,14 @@ template <> struct std::hash<Vertex> {
   }
 };
 
-float mapValue(float input, float inMin, float inMax, float outMin,
+float Window::mapValue(float input, float inMin, float inMax, float outMin,
                float outMax) {
   return outMin + (outMax - outMin) * (input - inMin) / (inMax - inMin);
+}
+
+void Window::setRandomRotation() {
+  auto &re{m_randomEngine};
+  m_chickenRotation = m_randomRotation(re);
 }
 
 void Window::onEvent(SDL_Event const &event) {
@@ -25,6 +30,11 @@ void Window::onEvent(SDL_Event const &event) {
       m_truckSpeed = -1.0f;
     if (event.key.keysym.sym == SDLK_d)
       m_truckSpeed = 1.0f;
+    if (event.key.keysym.sym == SDLK_SPACE &&
+        glm::distance2(m_chickenPos, m_camera.m_eye) <= 0.5) {
+      m_chickenPos = {0.0f, 0.0f, 0.0f};
+      setRandomRotation();
+    }
   }
   if (event.type == SDL_KEYUP) {
     if (event.key.keysym.sym == SDLK_w && m_dollySpeed > 0)
@@ -44,6 +54,9 @@ void Window::onEvent(SDL_Event const &event) {
 
 void Window::onCreate() {
   auto const &assetsPath{abcg::Application::getAssetsPath()};
+  auto const seed{std::chrono::steady_clock::now().time_since_epoch().count()};
+  m_randomEngine.seed(seed);
+  setRandomRotation();
 
   abcg::glClearColor(0, 0, 0, 1);
 
@@ -159,10 +172,30 @@ void Window::loadModelFromFile(std::string_view path) {
 
 void Window::onPaint() {
   auto const deltaTime{gsl::narrow_cast<float>(getDeltaTime())};
-  // m_chickenPos.x += m_chickenSpeed * deltaTime;
-  m_chickenRotation += 10 * deltaTime;
-  if (m_chickenRotation >= 360)
-    m_chickenRotation = 0;
+
+  // Update chicken pos
+  // Calculate the displacement based on the rotation angle
+  m_chickenPos.x +=
+      deltaTime * m_chickenSpeed * glm::sin(glm::radians(m_chickenRotation));
+  m_chickenPos.z +=
+      deltaTime * m_chickenSpeed * glm::cos(glm::radians(m_chickenRotation));
+
+  if (m_chickenPos.x < -4.8f) {
+    m_chickenPos.x = -4.8f;
+    setRandomRotation();
+  }
+  if (m_chickenPos.x > 4.8f) {
+    m_chickenPos.x = 4.8f;
+    setRandomRotation();
+  }
+  if (m_chickenPos.z < -4.8f) {
+    m_chickenPos.z = -4.8f;
+    setRandomRotation();
+  }
+  if (m_chickenPos.z > 4.8f) {
+    m_chickenPos.z = 4.8f;
+    setRandomRotation();
+  }
 
   // Clear color buffer and depth buffer
   abcg::glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

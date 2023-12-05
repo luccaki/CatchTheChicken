@@ -7,6 +7,9 @@
 #include "ground.hpp"
 #include "wall.hpp"
 
+#include <cmath>
+#include <random>
+
 struct Vertex {
   glm::vec3 position;
 
@@ -36,6 +39,9 @@ private:
   GLint m_modelMatrixLocation{};
   GLint m_colorLocation{};
 
+  std::default_random_engine m_randomEngine;
+  std::uniform_real_distribution<float> m_randomRotation{0.0f, 360.0f};
+
   Camera m_camera;
   float m_dollySpeed{};
   float m_truckSpeed{};
@@ -48,14 +54,14 @@ private:
 
   glm::vec3 m_chickenPos{0.0f, 0.0f, 0.0f};
   float m_chickenRotation{0.0f};
-  //float m_chickenSpeed{0.5f};
-
-
+  float m_chickenSpeed{0.5f};
 
   std::vector<Vertex> m_vertices;
   std::vector<GLuint> m_indices;
 
   void loadModelFromFile(std::string_view path);
+  float mapValue(float input, float inMin, float inMax, float outMin, float outMax);
+  void setRandomRotation();
 };
 
 #endif
