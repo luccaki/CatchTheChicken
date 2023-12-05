@@ -10,38 +10,14 @@ public:
   void destroy();
 
 private:
-  GLuint m_VAOFrontWall{};
-  GLuint m_VBOFrontWall{};
-
-  GLuint m_VAOBackWall{};
-  GLuint m_VBOBackWall{};
-
-  GLuint m_VAOLeftWall{};
-  GLuint m_VBOLeftWall{};
-
-  GLuint m_VAORightWall{};
-  GLuint m_VBORightWall{};
+  GLuint m_VAOWall{};
+  GLuint m_VBOWall{};
 
   GLint m_modelMatrixLoc{};
   GLint m_colorLoc{};
 
-  std::array<glm::vec3, 4> verticesFrontWall{{{-5.0f, 0.0f, +5.0f},
+  std::array<glm::vec3, 4> verticesWall{{{-5.0f, 0.0f, +5.0f},
                                               {-5.0f, 1.0f, +5.0f},
-                                              {+5.0f, 0.0f, +5.0f},
-                                              {+5.0f, 1.0f, +5.0f}}};
-
-  std::array<glm::vec3, 4> verticesBackWall{{{-5.0f, 0.0f, -5.0f},
-                                             {-5.0f, 1.0f, -5.0f},
-                                             {+5.0f, 0.0f, -5.0f},
-                                             {+5.0f, 1.0f, -5.0f}}};
-
-  std::array<glm::vec3, 4> verticesLeftWall{{{-5.0f, 0.0f, -5.0f},
-                                             {-5.0f, 1.0f, -5.0f},
-                                             {-5.0f, 0.0f, +5.0f},
-                                             {-5.0f, 1.0f, +5.0f}}};
-
-  std::array<glm::vec3, 4> verticesRightWall{{{+5.0f, 0.0f, -5.0f},
-                                              {+5.0f, 1.0f, -5.0f},
                                               {+5.0f, 0.0f, +5.0f},
                                               {+5.0f, 1.0f, +5.0f}}};
 
