@@ -1,113 +1,140 @@
-# ABCg
+Lucca Ianaguivara Kisanucki - RA: 11201812090
 
-![build workflow](https://github.com/hbatagelo/abcg/actions/workflows/build.yml/badge.svg)
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/hbatagelo/abcg)](https://github.com/hbatagelo/abcg/releases/latest)
+# Catch the Chicken
 
-Development framework accompanying the course [MCTA008-17 Computer Graphics](http://professor.ufabc.edu.br/~harlen.batagelo/cg/) at [UFABC](https://www.ufabc.edu.br/).
+Link para a aplicação: https://luccaki.github.io/CatchTheChicken/
 
-[Documentation](https://hbatagelo.github.io/abcg/abcg/doc/html/) | [Release notes](CHANGELOG.md)
+Um jogo 3D, onde o objetivo é conseguir pegar a galinha.
 
-ABCg is a lightweight C++ framework that simplifies the development of 3D graphics applications based on [OpenGL](https://www.opengl.org), [OpenGL ES](https://www.khronos.org), [WebGL](https://www.khronos.org/webgl/), and [Vulkan](https://www.vulkan.org). It is designed for the tutorials and assignments of the course "MCTA008-17 Computer Graphics" taught at Federal University of ABC (UFABC).
+## Movimentação da camera / Visão
 
-***
+Código baseado no projeto lookat, porém foi feito modificações na movimentação da camera, foi adicionado o controle por mouse da movimentação lateral da tela.
 
-## Main features
+No método onEvent():
+```
+  if (event.type == SDL_MOUSEMOTION) {
+    m_panSpeed = mapValue(event.motion.x, 0, m_viewportSize.x, -1, 1) * m_mouseSensitivity;
+  }
+```
+Dependendo da posição do mouse no eixo X, ele faz um mapa para um valor entre -1 e 1, sendo a velocidade que ele vai virar a tela, quando negativo vira para esquerda, quando positivo vira para direita, a tela só fica parada quando o valor é zero e o mouse está no centro da tela.
 
-*   Supported platforms: Linux, macOS, Windows, WebAssembly.
-*   Supported backends: OpenGL 3.3+, OpenGL ES 3.0+, WebGL 2.0 (via Emscripten), Vulkan 1.3.
-*   Applications that use the common subset of functions between OpenGL 3.3 and OpenGL ES 3.0 can be built for WebGL 2.0 using the same source code.
-*   OpenGL functions can be qualified with the `abcg::` namespace to enable throwing exceptions with descriptive GL error messages that include the source code location.
-*   Includes helper classes and functions for loading textures (using [SDL\_image](https://www.libsdl.org/projects/SDL_image/)), loading OBJ 3D models (using [tinyobjloader](https://github.com/tinyobjloader/tinyobjloader)), and compiling GLSL shaders to SPIR-V with [glslang](https://github.com/KhronosGroup/glslang).
+Também para melhor a visão, o ponto mais longe da camera foi aumentado para 20.0f:
+```
+void Camera::computeProjectionMatrix(glm::vec2 const &size) {
+  m_projMatrix = glm::mat4(1.0f);
+  auto const aspect{size.x / size.y};
+  m_projMatrix = glm::perspective(glm::radians(70.0f), aspect, 0.1f, 20.0f);
+}
+```
 
-***
+## Parede / Cerca
 
-## Requirements
+Além do chão do projeto lookat foi adicionado 4 paredes, que funcionam como uma cerca, para limitar a movimentação da galinha e do jogador.
 
-The following minimum requirements are shared among all platforms:
+As paredes contém os seguintes vertices:
+```
+  std::array<glm::vec3, 4> verticesFrontWall{{{-5.0f, 0.0f, +5.0f},
+                                              {-5.0f, 1.0f, +5.0f},
+                                              {+5.0f, 0.0f, +5.0f},
+                                              {+5.0f, 1.0f, +5.0f}}};
 
-*   [CMake](https://cmake.org/) 3.21.
-*   A C++ compiler with at least partial support for C++20 (tested with GCC 12, Clang 16, MSVC 17, and emcc 3.1.42).
-*   A system with support for OpenGL 3.3 (OpenGL backend) or Vulkan 1.3 (Vulkan backend). Conformant software rasterizers such as Mesa's [Gallium llvmpipe](https://docs.mesa3d.org/drivers/llvmpipe.html) and lavapipe (post Jun 2022) are supported. Mesa's [D3D12](https://devblogs.microsoft.com/directx/directx-heart-linux/) backend on [WSL 2.0](https://docs.microsoft.com/en-us/windows/wsl/install) is supported as well.
+  std::array<glm::vec3, 4> verticesBackWall{{{-5.0f, 0.0f, -5.0f},
+                                             {-5.0f, 1.0f, -5.0f},
+                                             {+5.0f, 0.0f, -5.0f},
+                                             {+5.0f, 1.0f, -5.0f}}};
 
-For WebAssembly:
+  std::array<glm::vec3, 4> verticesLeftWall{{{-5.0f, 0.0f, -5.0f},
+                                             {-5.0f, 1.0f, -5.0f},
+                                             {-5.0f, 0.0f, +5.0f},
+                                             {-5.0f, 1.0f, +5.0f}}};
 
-*   [Emscripten](https://emscripten.org/).
-*   A browser with support for WebGL 2.0.
+  std::array<glm::vec3, 4> verticesRightWall{{{+5.0f, 0.0f, -5.0f},
+                                              {+5.0f, 1.0f, -5.0f},
+                                              {+5.0f, 0.0f, +5.0f},
+                                              {+5.0f, 1.0f, +5.0f}}};
+```
+Cada uma é criada com seu próprio VBO e VAO.
 
-For building desktop applications:
+Além disso no código da camera, foi adicionado uma verificação da posição, para não ultrapassar a cerca:
+```
+void Camera::computeViewMatrix() {
+  if (m_eye.x < -4.8f)
+    m_eye.x = -4.8f;
+  if (m_eye.x > 4.8f)
+    m_eye.x = 4.8f;
+  if (m_eye.z < -4.8f)
+    m_eye.z = -4.8f;
+  if (m_eye.z > 4.8f)
+    m_eye.z = 4.8f;
 
-*   [SDL](https://www.libsdl.org/) 2.0.
-*   [SDL\_image](https://www.libsdl.org/projects/SDL_image/) 2.0.
-*   [GLEW](http://glew.sourceforge.net/) 2.2.0 (required for OpenGL-based applications).
-*   [Vulkan](https://www.lunarg.com/vulkan-sdk/) 1.3 (required for Vulkan-based applications).
+  m_viewMatrix = glm::lookAt(m_eye, m_at, m_up);
+}
+```
+Um quadrado imaginário entre as coordenadas -4.8 e +4.8, pois as paredes vai de -5 a +5
 
-Desktop dependencies can be resolved automatically with [Conan](https://conan.io/), but it is disabled by default. To use Conan, install Conan 1.47 or a later 1.\* version (ABCg is not compatible with Conan 2.0!) and then configure CMake with `-DENABLE_CONAN=ON`.
+## Galinha
 
-The default renderer backend is OpenGL (CMake option `GRAPHICS_API=OpenGL`). To use the Vulkan backend, configure CMake with `-DGRAPHICS_API=Vulkan`.
+A galinha é gerada usando o arquivo chicken.obj que contém os vertices dela.
 
-***
+E para essa primeira versão ela fica apenas girando, então foi adicionado um código para ir aumentando o angulo de rotação do modelo:
+```
+auto const deltaTime{gsl::narrow_cast<float>(getDeltaTime())};
+m_chickenRotation += 10 * deltaTime;
+if (m_chickenRotation >= 360)
+    m_chickenRotation = 0;
 
-## Installation and usage
+...
 
-Start by cloning the repository:
+model = glm::rotate(model, glm::radians(m_chickenRotation), glm::vec3(0, 1, 0));
+```
 
-    # Get abcg repo
-    git clone https://github.com/hbatagelo/abcg.git
+Para a ultima versão será adicionado a lógica de andar aleatoriamente dentro da cerca.
 
-    # Enter the directory
-    cd abcg
+## Vertex e Fragment Shader
 
-Follow the instructions below to build the "Hello, World!" sample located in `abcg/examples/helloworld`.
+Para o vertex shader foi apenas aumentado o raio de visão:
+```
+#version 300 es
 
-### Windows
+layout(location = 0) in vec3 inPosition;
 
-*   Run `build-vs.bat` for building with the Visual Studio 2022 toolchain.
-*   Run `build.bat` for building with GCC (MinGW-w64).
+uniform vec4 color;
+uniform mat4 modelMatrix;
+uniform mat4 viewMatrix;
+uniform mat4 projMatrix;
 
-`build-vs.bat` and `build.bat` accept two optional arguments: (1) the build type, which is `Release` by default, and (2) an extra CMake option. For example, for a `Debug` build with `-DENABLE_CONAN=ON` using VS 2022, run
+out vec4 fragColor;
 
-    build-vs.bat Debug -DENABLE_CONAN=ON
+void main() {
+  vec4 posEyeSpace = viewMatrix * modelMatrix * vec4(inPosition, 1);
 
-### Linux and macOS
+  float i = 1.0 - (-posEyeSpace.z / 7.0);
+  fragColor = vec4(i, i, i, 1) * color;
 
-Run `./build.sh`.
+  gl_Position = projMatrix * posEyeSpace;
+}
+```
+Para o fragment shader, foi implementado uma função para gerar tons de cores aleatorias em volta da cor principal, o outColor pode ter valores entre -0.1 e +0.1 em relação ao fragColor:
+```
+#version 300 es
+precision mediump float;
 
-The script accepts two optional arguments: (1) the build type, which is `Release` by default, and (2) an extra CMake option. For example, for a `Debug` build with `-DENABLE_CONAN=ON`, run
+in vec4 fragColor;
+out vec4 outColor;
 
-    ./build.sh Debug -DENABLE_CONAN=ON
+float rand(vec2 co) {
+    return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453);
+}
 
-### WebAssembly
+void main() {
+    float randomValue1 = rand(gl_FragCoord.xy);
+    float randomValue2 = rand(gl_FragCoord.yx);
+    vec3 randomOffset = vec3(randomValue1, randomValue2, rand(vec2(randomValue1, randomValue2)));
+    randomOffset = randomOffset * 0.2 - 0.1;
 
-1.  Run `build-wasm.bat` (Windows) or `./build-wasm.sh` (Linux/macOS).
-2.  Run `runweb.bat` (Windows) or `./runweb.sh` (Linux/macOS) for setting up a local web server.
-3.  Open <http://localhost:8080/helloworld.html>.
+    outColor = vec4(clamp(fragColor.rgb + randomOffset, 0.0, 1.0), fragColor.a);
+}
 
-***
-
-## Docker setup
-
-ABCg can be built in a [Docker](https://www.docker.com/) container. The Dockerfile provided is based on Ubuntu 22.04 and includes Emscripten.
-
-1.  Create the Docker image (`abcg`):
-
-        sudo docker build -t abcg .
-
-2.  Create the container (`abcg_container`):
-
-        sudo docker create -it \
-          -p 8080:8080 \
-          -v /tmp/.X11-unix:/tmp/.X11-unix:rw \
-          -e DISPLAY \
-          --name abcg_container abcg
-
-3.  Start the container:
-
-        sudo docker start -ai abcg_container
-
-    On NVIDIA GPUs, install the [NVIDIA Container Toolkit](https://github.com/NVIDIA/nvidia-docker) to allow the container to use the host's NVIDIA driver and X server. Expose the X server with `sudo xhost +local:root` before starting the container.
-
-***
-
-## License
-
-ABCg is licensed under the MIT License. See [LICENSE](https://github.com/hbatagelo/abcg/blob/main/LICENSE) for more information.
+```
+Ficando com essa aparência:
+![image](https://github.com/luccaki/CatchTheChicken/assets/49926738/475bd9d9-4b23-4268-a12f-6abbe18bdce1)
