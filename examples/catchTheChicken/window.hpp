@@ -82,7 +82,7 @@ private:
   abcg::Timer m_timer;
   int caughtChickens{0};
   int maxCaughtChickens{0};
-  double playTime{10};
+  double playTime{30};
 
   //void loadModelFromFile(std::string_view path);
   float mapValue(float input, float inMin, float inMax, float outMin, float outMax);
